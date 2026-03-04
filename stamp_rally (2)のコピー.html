@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MEGURO MARCHE スタンプラリー</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;min-height:100%;background:#0d1117;font-family:-apple-system,sans-serif;color:#fff}
+#wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;gap:32px}
+#logo{font-size:13px;letter-spacing:.2em;color:rgba(255,255,255,.5);text-align:center}
+h1{font-size:22px;font-weight:800;text-align:center;letter-spacing:.05em}
+#card{width:100%;max-width:340px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:20px}
+#stamp-area{width:120px;height:120px;border-radius:50%;border:3px dashed rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:56px;transition:all .4s}
+#stamp-area.stamped{border-color:#f0c040;background:rgba(240,192,64,.1);animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+#status{font-size:15px;text-align:center;line-height:1.7;color:rgba(255,255,255,.7)}
+#btn{background:#fff;color:#000;border:none;border-radius:50px;font-weight:700;font-size:17px;padding:18px 52px;cursor:pointer;-webkit-appearance:none;width:100%;max-width:280px;transition:opacity .2s}
+#btn:disabled{opacity:.4;cursor:not-allowed}
+#msg{font-size:14px;text-align:center;color:rgba(255,255,255,.5);min-height:20px}
+#complete{display:none;flex-direction:column;align-items:center;gap:16px;text-align:center}
+#complete.show{display:flex}
+#complete-icon{font-size:72px}
+#complete h2{font-size:24px;font-weight:800}
+#complete p{font-size:15px;color:rgba(255,255,255,.7);line-height:1.7}
+#complete .coupon{background:rgba(240,192,64,.15);border:2px solid #f0c040;border-radius:16px;padding:20px 24px;font-size:16px;font-weight:700;color:#f0c040;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="logo">15 MEGURO MARCHE</div>
+  <h1>スタンプラリー</h1>
+
+  <div id="card">
+    <div id="stamp-area">🎪</div>
+    <div id="status">ボタンを押してスタンプをゲットしよう</div>
+    <button id="btn" onclick="getStamp()">スタンプを押す</button>
+    <div id="msg"></div>
+  </div>
+
+  <div id="complete">
+    <div id="complete-icon">🎉</div>
+    <h2>コンプリート！</h2>
+    <p>受付スタッフにこの画面を見せてね</p>
+    <div class="coupon">MEGURO MARCHE<br>スタンプ達成</div>
+  </div>
+</div>
+
+<script>
+// 会場座標（東京都目黒区下目黒5-1-11）
+var CENTER_LAT = 35.63090;
+var CENTER_LNG = 139.70307;
+var RADIUS_M = 50;
+
+var stamped = false;
+
+// 距離計算（メートル）
+function calcDist(lat1,lng1,lat2,lng2){
+  var R=6371000;
+  var dLat=(lat2-lat1)*Math.PI/180;
+  var dLng=(lng2-lng1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+    Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function getStamp(){
+  if(stamped)return;
+  var btn=document.getElementById('btn');
+  var msg=document.getElementById('msg');
+  btn.disabled=true;
+  msg.textContent='位置情報を確認中...';
+
+  if(!navigator.geolocation){
+    msg.textContent='位置情報が使えません';
+    btn.disabled=false;
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      var dist=calcDist(pos.coords.latitude,pos.coords.longitude,CENTER_LAT,CENTER_LNG);
+      if(dist<=RADIUS_M){
+        // スタンプ成功
+        stamped=true;
+        document.getElementById('stamp-area').textContent='✅';
+        document.getElementById('stamp-area').classList.add('stamped');
+        document.getElementById('status').textContent='スタンプゲット！';
+        btn.textContent='取得済み';
+        msg.textContent='会場内で認証しました';
+        setTimeout(function(){
+          document.getElementById('card').style.display='none';
+          document.getElementById('complete').classList.add('show');
+        },1200);
+      } else {
+        msg.textContent='会場の近くにいないとスタンプを押せません（距離: '+Math.round(dist)+'m）';
+        btn.disabled=false;
+      }
+    },
+    function(err){
+      if(err.code===1){
+        msg.textContent='位置情報を許可してください';
+      } else {
+        msg.textContent='位置情報の取得に失敗しました。もう一度試してください';
+      }
+      btn.disabled=false;
+    },
+    {enableHighAccuracy:true, timeout:10000, maximumAge:0}
+  );
+}
+</script>
+</body>
+</html>
