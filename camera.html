@@ -27,10 +27,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;heigh
 #bb{position:absolute;top:max(8px,env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));z-index:5;width:auto;flex:none;margin:0;padding:8px 14px;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:50px;font-size:12px;font-weight:600;cursor:pointer;-webkit-appearance:none}
 #ri{width:100%;flex:1 1 0;min-height:0;object-fit:contain;-webkit-user-select:none;user-select:none}
 #hint{color:#fff;font-size:12px;text-align:center;line-height:1.45;padding:0 4px;flex-shrink:0}
-.rs-actions{display:flex;flex-direction:row;flex-wrap:nowrap;gap:8px;width:100%;flex-shrink:0;align-items:stretch;justify-content:center}
-#saveBtn{flex:1;min-width:0;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:50px;font-size:13px;font-weight:600;padding:12px 10px;cursor:pointer;-webkit-appearance:none}
-#shareBtn{display:none;flex:1;min-width:0;background:#fff;color:#000;border:none;border-radius:50px;font-size:13px;font-weight:700;padding:12px 10px;cursor:pointer;-webkit-appearance:none}
-#rs.sharing #shareBtn{display:block}
+.rs-actions{display:none;flex-direction:row;flex-wrap:nowrap;gap:8px;width:100%;flex-shrink:0;align-items:stretch;justify-content:center}
+#rs.sharing .rs-actions{display:flex}
+#shareBtn{flex:1;min-width:0;background:#fff;color:#000;border:none;border-radius:50px;font-size:13px;font-weight:700;padding:12px 10px;cursor:pointer;-webkit-appearance:none;line-height:1.25}
 </style>
 </head>
 <body>
@@ -60,10 +59,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;heigh
 <div id="rs">
   <button type="button" id="bb" onclick="back()">もう一度撮る</button>
   <img id="ri" alt="">
-  <p id="hint">「写真を保存」で端末に保存できます（機種により保存先が異なります）</p>
+  <p id="hint"></p>
   <div class="rs-actions">
-    <button type="button" id="saveBtn" onclick="saveResult()">写真を保存</button>
-    <button type="button" id="shareBtn" onclick="shareResult()">共有する</button>
+    <button type="button" id="shareBtn" onclick="shareResult()">共有する・保存する</button>
   </div>
 </div>
 <canvas id="c" style="display:none"></canvas>
@@ -229,25 +227,12 @@ function done(){
   document.getElementById('ri').src=document.getElementById('c').toDataURL('image/jpeg',.95);
   document.getElementById('cs').style.display='none';
   var rs=document.getElementById('rs');
-  rs.classList.toggle('sharing',!!navigator.share);
+  var canShare=!!navigator.share;
+  rs.classList.toggle('sharing',canShare);
+  document.getElementById('hint').textContent=canShare
+    ? '「共有する・保存する」で共有シートを開き、写真への保存やアプリへの共有を選べます。'
+    : 'この環境では共有シートが使えません。写真を長押しして「写真に追加」などで保存してください。';
   rs.style.display='flex';
-}
-function saveResult(){
-  var c=document.getElementById('c');
-  c.toBlob(function(blob){
-    if(!blob){alert('画像の作成に失敗しました');return;}
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;
-    a.download='MEGURO-MARCHE.jpg';
-    a.rel='noopener';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    },250);
-  },'image/jpeg',0.95);
 }
 function shareResult(){
   if(!navigator.share)return;
